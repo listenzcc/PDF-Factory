@@ -175,7 +175,9 @@ class PDFRender(PDFBasic):
         return self.doc
 
     def _render_first_page(self, canvas: canvas.Canvas, doc: BaseDocTemplate):
-        w, h = self.page_size
+        W, H = self.page_size
+        w = W-doc.leftMargin-doc.rightMargin
+        h = H - doc.bottomMargin - doc.topMargin
         color = colors.darkblue
 
         header_text = 'Left'
@@ -186,14 +188,13 @@ class PDFRender(PDFBasic):
             canvas.setFillColor(color)
             canvas.setStrokeColor(color)
             canvas.setFont(self.font_name, 8)
-            canvas.translate(doc.leftMargin, h-doc.topMargin+0.5*inch)
+            canvas.translate(doc.leftMargin, H-doc.topMargin+0.5*inch)
 
-            _w = w-doc.leftMargin-doc.rightMargin
-            _dy = 0.05*inch
+            dy = 0.05*inch
 
-            canvas.drawString(0, _dy, header_text)
-            canvas.drawRightString(_w, _dy, header_text_r)
-            canvas.line(0, 0, _w, 0)
+            canvas.drawString(0, dy, header_text)
+            canvas.drawRightString(w, dy, header_text_r)
+            canvas.line(0, 0, w, 0)
 
         # Draw footer
         with self._safeCanvas(canvas):
@@ -202,23 +203,22 @@ class PDFRender(PDFBasic):
             canvas.setFont(self.font_name, 12)
             canvas.translate(doc.leftMargin, doc.bottomMargin-0.5*inch)
 
-            _w = w-doc.leftMargin-doc.rightMargin
-            _offset_y = 1.6*inch
-            _dy = -0.25*inch
+            offset_y = 1.6*inch
+            dy = -0.25*inch
 
-            canvas.line(0, _offset_y, _w*0.3, _offset_y)
-            canvas.drawString(0, _offset_y+2*_dy, 'CopyRight')
-            canvas.drawString(0, _offset_y+3*_dy, 'Listenzcc')
-            canvas.drawString(0, _offset_y+4*_dy, 'Road')
-            canvas.drawString(0, _offset_y+5*_dy, 'Beijing')
+            canvas.line(0, offset_y, w*0.3, offset_y)
+            canvas.drawString(0, offset_y+2*dy,
+                              'CopyRight:\tBelongs to no-one')
+            canvas.drawString(0, offset_y+3*dy,
+                              'Author:\tListenzcc')
+            canvas.drawString(0, offset_y+4*dy,
+                              'Address:\tSome building, some road')
+            canvas.drawString(0, offset_y+5*dy,
+                              'Location:\tSome city, some state')
 
         # Draw the Logo svg
         with self._safeCanvas(canvas):
             canvas.translate(doc.leftMargin, doc.bottomMargin)
-            _w = w - doc.leftMargin - doc.rightMargin
-            _h = h - doc.bottomMargin - doc.topMargin
-            drawing: shapes.Drawing = svg2rlg(
-                os.environ['pdfFactory.svg.logo.path'])
 
             drawing: shapes.Drawing = svg2rlg(
                 os.environ['pdfFactory.svg.frame.path'])
@@ -227,29 +227,29 @@ class PDFRender(PDFBasic):
             icon_height = 4 * inch
             k = icon_height / drawing.height
             drawing.scale(k, k)
+
             x1, y1, x2, y2 = drawing.getBounds()
-            print(x1, y1, x2, y2)
             renderPDF.draw(
                 drawing, canvas,
-                _w*0.5 - (x2+x1)*0.5,
-                _h*0.5,  # - (y2-y1)*0.5,
-                showBoundary=True
+                w*0.5 - (x2+x1)*0.5,
+                h*0.5,
             )
 
             canvas.setFillColor(color)
             canvas.setStrokeColor(color)
-            canvas.rect(_w*0.5, _h*0.5, x2-x1, y2-y1)
-            canvas.translate(w/2, h/2)
             canvas.setFont(self.font_name, 36)
-            canvas.drawCentredString(0, 2*inch, 'Auto Generated PDF')
+            canvas.drawCentredString(
+                w*0.5, h*0.5+(y1+y2)*0.5-0.12*inch, 'Auto Generated PDF')
             canvas.setFont(self.font_name, 24)
-            canvas.drawCentredString(0, 1*inch, 'Example Page')
+            canvas.drawCentredString(w*0.5, h*0.5, 'Example Page')
 
         return
 
     def _render_content_page(self, canvas: canvas.Canvas, doc: BaseDocTemplate):
         """Customizes the first page (adds footer at the bottom)."""
-        w, h = self.page_size
+        W, H = self.page_size
+        w = W-doc.leftMargin-doc.rightMargin
+        h = H - doc.bottomMargin - doc.topMargin
         color = 'gray'
 
         # Header texts
@@ -260,19 +260,25 @@ class PDFRender(PDFBasic):
         current_page = doc.page
         page_number = f"第 {current_page} 页"
 
+        drawing: shapes.Drawing = svg2rlg(
+            os.environ['pdfFactory.svg.logoWaterPrint.path'])
+        # Make the svg as given height
+        icon_height = 4 * inch
+        k = icon_height / drawing.height
+        drawing.scale(k, k)
+
         # Draw header
         with self._safeCanvas(canvas):
             canvas.setFillColor(color)
             canvas.setStrokeColor(color)
             canvas.setFont(self.font_name, 8)
-            canvas.translate(doc.leftMargin, h-doc.topMargin+0.5*inch)
+            canvas.translate(doc.leftMargin, H-doc.topMargin+0.5*inch)
 
-            _w = w-doc.leftMargin-doc.rightMargin
-            _dy = 0.05*inch
+            dy = 0.05*inch
 
-            canvas.drawString(0, _dy, header_text)
-            canvas.drawRightString(_w, _dy, header_text_r)
-            canvas.line(0, 0, _w, 0)
+            canvas.drawString(0, dy, header_text)
+            canvas.drawRightString(w, dy, header_text_r)
+            canvas.line(0, 0, w, 0)
 
         # Draw footer
         with self._safeCanvas(canvas):
@@ -281,11 +287,22 @@ class PDFRender(PDFBasic):
             canvas.setFont(self.font_name, 8)
             canvas.translate(doc.leftMargin, doc.bottomMargin-0.5*inch)
 
-            _w = w-doc.leftMargin-doc.rightMargin
-            _dy = -0.15*inch
+            dy = -0.15*inch
 
-            canvas.drawCentredString(_w / 2.0, _dy, page_number)
-            canvas.line(0, 0, _w, 0)
+            canvas.drawCentredString(w / 2.0, dy, page_number)
+            canvas.line(0, 0, w, 0)
+
+        # Draw water print
+        with self._safeCanvas(canvas):
+            canvas.translate(doc.leftMargin, doc.bottomMargin)
+            canvas.translate(w*0.5, h*0.5)
+            canvas.rotate(20)
+            x1, y1, x2, y2 = drawing.getBounds()
+            renderPDF.draw(
+                drawing, canvas,
+                -(x1+x2)*0.5,
+                -(y1+y2)*0.5,
+            )
         return
 
     @contextlib.contextmanager

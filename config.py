@@ -33,6 +33,7 @@ projectEnvName = 'pdfFactory'
 
 font = {'font.cn.path': CONF.Font.CN.Path}
 svg = {'svg.logo.path': CONF.Svg.Logo.Path,
+       'svg.logoWaterPrint.path': CONF.Svg.LogoWaterPrint.Path,
        'svg.frame.path': CONF.Svg.Frame.Path}
 
 updates = {}

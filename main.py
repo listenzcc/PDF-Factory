@@ -51,7 +51,7 @@ for name in styles.byName:
     for k in [e for e in dir(styles[name]) if not e.startswith('_')]:
         v = getattr(styles[name], k)
         lst.append(f'{k}: {v}')
-    generator.insert_paragraph(',\t'.join(lst))
+    generator.insert_paragraph('{'+',\t'.join(lst)+'}', style='code')
 
 
 # ----------------------------------------

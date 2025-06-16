@@ -15,6 +15,10 @@ Svg:
     Name: CocaCola
     Path: "./asset/svg/coca-cola-logo-svgrepo-com.svg"
 
+  LogoWaterPrint:
+    Name: CocaCola
+    Path: "./asset/svg/coca-cola-logo-svgrepo-com-waterprint.svg"
+
   Frame:
     Name: Frame
     Path: "./asset/svg/frame.svg"
