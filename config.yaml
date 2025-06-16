@@ -1,0 +1,20 @@
+Project:
+  Name: PDF Factory
+  EnvName: pdfFactory
+
+Font:
+  CN:
+    Name: 华文新魏
+    Path: "./asset/font/STXINWEI.TTF"
+  CN2:
+    Name: 华文隶书
+    Path: "./asset/font/STLITI.TTF"
+
+Svg:
+  Logo:
+    Name: CocaCola
+    Path: "./asset/svg/coca-cola-logo-svgrepo-com.svg"
+
+  Frame:
+    Name: Frame
+    Path: "./asset/svg/frame.svg"
