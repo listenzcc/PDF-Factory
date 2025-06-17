@@ -18,7 +18,6 @@ Functions:
 
 # %% ---- 2025-06-16 ------------------------
 # Requirements and constants
-import os
 import contextlib
 
 from io import BytesIO
@@ -26,7 +25,6 @@ from html import escape
 from typing import Union
 from pathlib import Path
 from datetime import datetime
-from svglib.svglib import svg2rlg
 
 from reportlab.lib import colors
 from reportlab.lib.units import inch
@@ -35,11 +33,39 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.pagesizes import A4
 
 from reportlab.pdfgen import canvas
-from reportlab.graphics import renderPDF, shapes
-from reportlab.platypus import Table, Paragraph, Spacer, Image, PageBreak, BaseDocTemplate, Frame, PageTemplate
+from reportlab.graphics import renderPDF
+from reportlab.platypus import PageBreak, FrameBreak, NextPageTemplate
+from reportlab.platypus import Table, Paragraph, Spacer, Image
+from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
 
+from .svg import SVGCache
 from .font import register_chinese_font
 from .log import logger
+
+# %%
+svg_cache = SVGCache()
+
+
+class MySVG:
+    firstPageFrame = 'pdfFactory.svg.frame.path'
+    waterPrint = 'pdfFactory.svg.logoWaterPrint.path'
+
+
+def _prepare_svg():
+    key = MySVG.firstPageFrame
+    svg_cache.checkout(key)
+    svg_cache.resize_drawing_by_height(key, 4)
+    logger.info(f'Using svg: {key}')
+
+    key = MySVG.waterPrint
+    svg_cache.checkout(key)
+    svg_cache.resize_drawing_by_height(key, 4)
+    logger.info(f'Using svg: {key}')
+
+    return
+
+
+_prepare_svg()
 
 # %% ---- 2025-06-16 ------------------------
 # Function and class
@@ -141,32 +167,57 @@ class PDFRender(PDFBasic):
             bottomMargin=72
         )
 
-        content_page = Frame(
+        first_page_frame = Frame(
             doc.leftMargin,
             doc.bottomMargin,
             doc.width,
             doc.height,
-            id='content'
+            id='firstPageFrame',
         )
 
-        first_page = Frame(
+        normal_page_frame = Frame(
             doc.leftMargin,
             doc.bottomMargin,
             doc.width,
             doc.height,
-            id='firstPage'
+            id='normalPageFrame',
+            showBoundary=True
+        )
+
+        two_columns_page_left_frame = Frame(
+            doc.leftMargin,
+            doc.bottomMargin,
+            doc.width/2,
+            doc.height,
+            id='twoColumnsPageLeftFrame',
+            showBoundary=True
+        )
+
+        two_columns_page_right_frame = Frame(
+            doc.leftMargin+doc.width/2,
+            doc.bottomMargin,
+            doc.width/2,
+            doc.height,
+            id='twoColumnsPageRightFrame',
+            showBoundary=True
         )
 
         doc.addPageTemplates([
             PageTemplate(
-                id='Page-FirstPage',
-                frames=[first_page],
+                id='FirstPage',
+                frames=[first_page_frame],
                 onPage=self._render_first_page,
-                autoNextPageTemplate='Page-Content'),
+            ),
             PageTemplate(
-                id='Page-Content',
-                frames=[content_page],
-                onPage=self._render_content_page)
+                id='TwoColumnsPage',
+                frames=[two_columns_page_left_frame,
+                        two_columns_page_right_frame],
+                onPage=self._render_normal_page,
+            ),
+            PageTemplate(
+                id='NormalPage',
+                frames=[normal_page_frame],
+                onPage=self._render_normal_page)
         ])
 
         self.doc = doc
@@ -220,13 +271,7 @@ class PDFRender(PDFBasic):
         with self._safeCanvas(canvas):
             canvas.translate(doc.leftMargin, doc.bottomMargin)
 
-            drawing: shapes.Drawing = svg2rlg(
-                os.environ['pdfFactory.svg.frame.path'])
-
-            # Make the svg as given height
-            icon_height = 4 * inch
-            k = icon_height / drawing.height
-            drawing.scale(k, k)
+            drawing = svg_cache.checkout(MySVG.firstPageFrame)
 
             x1, y1, x2, y2 = drawing.getBounds()
             renderPDF.draw(
@@ -245,10 +290,10 @@ class PDFRender(PDFBasic):
 
         return
 
-    def _render_content_page(self, canvas: canvas.Canvas, doc: BaseDocTemplate):
+    def _render_normal_page(self, canvas: canvas.Canvas, doc: BaseDocTemplate):
         """Customizes the first page (adds footer at the bottom)."""
         W, H = self.page_size
-        w = W-doc.leftMargin-doc.rightMargin
+        w = W - doc.leftMargin - doc.rightMargin
         h = H - doc.bottomMargin - doc.topMargin
         color = 'gray'
 
@@ -260,12 +305,7 @@ class PDFRender(PDFBasic):
         current_page = doc.page
         page_number = f"第 {current_page} 页"
 
-        drawing: shapes.Drawing = svg2rlg(
-            os.environ['pdfFactory.svg.logoWaterPrint.path'])
-        # Make the svg as given height
-        icon_height = 4 * inch
-        k = icon_height / drawing.height
-        drawing.scale(k, k)
+        drawing = svg_cache.checkout(MySVG.waterPrint)
 
         # Draw header
         with self._safeCanvas(canvas):
@@ -399,6 +439,21 @@ class PDFGenerator(PDFUtil):
     def insert_page_break(self):
         self.elements.append(PageBreak())
         logger.debug('Insert pageBreak')
+        return
+
+    def insert_frame_break(self):
+        self.elements.append(FrameBreak())
+        logger.debug('Insert pageBreak')
+        return
+
+    def switch_page_template(self, name: str):
+        '''
+        Insert NextPageTemplate(name) into the doc.
+        It also automatically inserts the page break to make sure it works.
+        '''
+        self.elements.append(NextPageTemplate(name))
+        logger.debug(f'Switch page template to {name}')
+        self.insert_page_break()
         return
 
 # %% ---- 2025-06-16 ------------------------

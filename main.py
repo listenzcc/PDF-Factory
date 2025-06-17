@@ -18,9 +18,6 @@ Functions:
 
 # %% ---- 2025-06-16 ------------------------
 # Requirements and constants
-import os
-from rich import print
-
 from config import CONF
 from util.pdf import PDFGenerator
 
@@ -35,13 +32,19 @@ generator = PDFGenerator()
 
 # ----------------------------------------
 # ---- First Page ----
-# generator.insert_paragraph('Auto Generated PDF', style='cTitle')
-# generator.insert_paragraph('Author: Listenzcc', style='cCenteredText')
-generator.insert_page_break()
-
+# Do nothing to make the first page
+pass
 
 # ----------------------------------------
-# ---- Content of Styles ----
+# ---- Something in Normal Page ----
+generator.switch_page_template('NormalPage')
+
+for p in open('./asset/doc/document.md', encoding='utf-8').read().split('\n'):
+    generator.insert_paragraph(p)
+
+# ----------------------------------------
+# ---- Styles in Normal Page ----
+generator.switch_page_template('TwoColumnsPage')
 generator.insert_paragraph('Styles (样式集)', style='cSubTitle')
 
 styles = generator.styles
@@ -52,6 +55,7 @@ for name in styles.byName:
         v = getattr(styles[name], k)
         lst.append(f'{k}: {v}')
     generator.insert_paragraph('{'+',\t'.join(lst)+'}', style='code')
+    generator.insert_frame_break()
 
 
 # ----------------------------------------
