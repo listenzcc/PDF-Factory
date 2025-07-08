@@ -98,7 +98,23 @@ def setup_styles(font_name):
             'fontSize': 12,
             'leading': 15,
             'alignment': TA_LEFT,
-            'spaceAfter': 10,
+            'spaceAfter': 4,
+        },
+        'cHead1Text': {
+            'parent': styles['BodyText'],
+            'fontSize': 14,
+            'leading': 15,
+            'alignment': TA_LEFT,
+            'spaceAfter': 4,
+            'textColor': colors.darkblue,
+        },
+        'cHead2Text': {
+            'parent': styles['BodyText'],
+            'fontSize': 12,
+            'leading': 15,
+            'alignment': TA_LEFT,
+            'spaceAfter': 4,
+            'textColor': colors.darkblue,
         },
         'cCenteredText': {
             'parent': styles['Normal'],
@@ -411,7 +427,8 @@ class PDFGenerator(PDFUtil):
             self.elements.append(Paragraph(text, self.styles['BodyText']))
             logger.warning(
                 f'The {style} is not available, using BodyText instead.')
-        self.elements.append(Spacer(1, 0.2*inch))
+        # Add between-paragraph space as 0.05 inch
+        self.elements.append(Spacer(1, 0.05*inch))
         logger.debug(f'Insert paragraph: {text[:20]}...')
         return
 

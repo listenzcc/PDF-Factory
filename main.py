@@ -41,6 +41,18 @@ generator.switch_page_template('NormalPage')
 
 for p in open('./asset/doc/document.md', encoding='utf-8').read().split('\n'):
     generator.insert_paragraph(p)
+generator.insert_page_break()
+
+for p in open('./asset/doc/ai.md', encoding='utf-8').read().split('\n'):
+    if len(p.strip()) == 0:
+        continue
+    if p.startswith('## '):
+        generator.insert_paragraph(p[2:].strip(), 'cHead1Text')
+    elif p.startswith('### '):
+        generator.insert_paragraph(p[3:].strip(), 'cHead2Text')
+    else:
+        generator.insert_paragraph(p)
+# generator.insert_page_break()
 
 # ----------------------------------------
 # ---- Styles in Normal Page ----
